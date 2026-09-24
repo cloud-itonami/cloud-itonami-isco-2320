@@ -1,0 +1,43 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:physics` runs it.
+;;
+;; README "Robotics premise": a workshop-support robot performs equipment
+;; setup, material handling and safety-checklist walkthroughs for hands-on
+;; training (ISCO 2320, vocational education teachers). Its physical work:
+;; carrying bar stock and consumables on a cart to the training benches,
+;; lifting a bench vise / workpiece onto the bench, and the practice weld
+;; coupons the trainees produce, pulled in tension before they are graded.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+;; Replacing an estimate with a sourced value is this bot's growth work.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isco-2320"
+ :cases
+ [{:id :stock-cart-to-bench
+   :kind :transport
+   :procedure "workshop AMR tows a 150 kg cart of steel bar stock from the store to a training bench"
+   :params {:mass-kg 90.0 :payload-kg 150.0 :v-max-mps 0.8 :a-max-mps2 0.4
+            :brake-decel-mps2 0.6 :drive-force-n 160.0 :crr 0.02
+            :cog-height-m 0.70 :support-half-length-m 0.35}
+   :sweep {:param :distance-m :values [15.0 25.0 35.0 50.0 70.0]}
+   :quantity :cycle-time-s
+   :limit {:max 60.0 :basis "estimate: one delivery leg must fit inside a 1-minute changeover between practical exercises"}
+   :boundary {:lo 5.0 :hi 200.0}}
+  {:id :vise-onto-bench
+   :kind :manipulator
+   :procedure "arm lifts a bench vise / workpiece from the cart deck onto the workbench"
+   :params {:l1-m 0.50 :l2-m 0.45 :m1-kg 5.0 :m2-kg 3.5
+            :from [0.60 -0.20] :to [0.45 0.25] :duration-s 3.0 :steps 500}
+   :sweep {:param :payload-kg :values [2.0 5.0 8.0 12.0 16.0]}
+   :quantity :peak-tau1-nm
+   :limit {:max 150.0 :basis "estimate: continuous shoulder torque of a 10 kg-payload class collaborative arm"}
+   :boundary {:lo 0.5 :hi 60.0}}
+  {:id :weld-coupon-tension
+   :kind :material
+   :procedure "trainee's mild-steel weld coupon is pulled in tension before grading"
+   :params {:length-m 0.20 :area-m2 1.9e-4 :youngs-modulus-pa 205.0e9
+            :yield-stress-pa 235.0e6 :hardening-pa 1.0e9 :density-kg-m3 7850.0}
+   :sweep {:param :max-force-n :values [20000.0 35000.0 45000.0 50000.0 60000.0]}
+   :quantity :final-strain
+   :limit {:max 0.002 :basis "estimate: coupon must stay within ~0.2 % strain (the offset-yield convention) at the proof load; S235 nominal yield 235 MPa per EN 10025-2 sets where it leaves"}
+   :boundary {:lo 10000.0 :hi 60000.0}}]}
